@@ -1,0 +1,2 @@
+source /home/rafael_ubuntu/esp/projects/can_recieve/build/bootloader/gdbinit/symbols
+source /home/rafael_ubuntu/esp/projects/can_recieve/build/bootloader/gdbinit/connect
