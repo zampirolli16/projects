@@ -1,151 +1,121 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
 /*
- * The following example demonstrates the self testing capabilities of the TWAI
- * peripheral by utilizing the No Acknowledgment Mode and Self Reception Request
- * capabilities. This example can be used to verify that the TWAI peripheral and
- * its connections to the external transceiver operates without issue. The example
- * will execute multiple iterations, each iteration will do the following:
- * 1) Start the TWAI driver
- * 2) Transmit and receive 100 messages using self reception request
- * 3) Stop the TWAI driver
+ * The following example demonstrates a Listen Only node in a TWAI network. The
+ * Listen Only node will not take part in any TWAI bus activity (no acknowledgments
+ * and no error frames). This example will execute multiple iterations, with each
+ * iteration the Listen Only node will do the following:
+ * 1) Listen for ping and ping response
+ * 2) Listen for start command
+ * 3) Listen for data messages
+ * 4) Listen for stop and stop response
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "driver/twai.h"
 
 /* --------------------- Definitions and static variables ------------------ */
+//Example Configuration
+#define NO_OF_ITERS                     3
+#define RX_TASK_PRIO                    9
+#define TX_GPIO_NUM                     21
+#define RX_GPIO_NUM                     22
+#define EXAMPLE_TAG                     "TWAI Listen Only"
 
-//Example Configurations
-#define NO_OF_MSGS              100
-#define NO_OF_ITERS             3
-#define TX_GPIO_NUM             21
-#define RX_GPIO_NUM             21
-#define TX_TASK_PRIO            8       //Sending task priority
-#define RX_TASK_PRIO            9       //Receiving task priority
-#define CTRL_TSK_PRIO           10      //Control task priority
-#define MSG_ID                  0x555   //11 bit standard format ID
-#define EXAMPLE_TAG             "TWAI Self Test"
+#define ID_MASTER_STOP_CMD              0x0A0
+#define ID_MASTER_START_CMD             0x0A1
+#define ID_MASTER_PING                  0x0A2
+#define ID_SLAVE_STOP_RESP              0x0B0
+#define ID_SLAVE_DATA                   0x0B1
+#define ID_SLAVE_PING_RESP              0x0B2
 
-static const twai_timing_config_t t_config = TWAI_TIMING_CONFIG_125KBITS();
-//Filter all other IDs except MSG_ID
-static const twai_filter_config_t f_config = {.acceptance_code = (MSG_ID << 21),
-                                              .acceptance_mask = ~(TWAI_STD_ID_MASK << 21),
-                                              .single_filter = true
-                                             };
-//Set to NO_ACK mode due to self testing with single module
-static const twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPIO_NUM, RX_GPIO_NUM, TWAI_MODE_NO_ACK);
+static const twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+static const twai_timing_config_t t_config = TWAI_TIMING_CONFIG_250KBITS();
+//Set TX queue length to 0 due to listen only mode
+static const twai_general_config_t g_config = {.mode = TWAI_MODE_LISTEN_ONLY,
+                                               .tx_io = TX_GPIO_NUM, .rx_io = RX_GPIO_NUM,
+                                               .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,
+                                               .tx_queue_len = 0, .rx_queue_len = 5,
+                                               .alerts_enabled = TWAI_ALERT_NONE,
+                                               .clkout_divider = 0
+                                              };
 
-static SemaphoreHandle_t tx_sem;
 static SemaphoreHandle_t rx_sem;
-static SemaphoreHandle_t ctrl_sem;
-static SemaphoreHandle_t done_sem;
 
 /* --------------------------- Tasks and Functions -------------------------- */
 
-static void twai_transmit_task(void *arg)
-{
-    twai_message_t tx_msg = {
-        // Message type and format settings
-        .extd = 0,              // Standard Format message (11-bit ID)
-        .rtr = 0,               // Send a data frame
-        .ss = 0,                // Not single shot
-        .self = 1,              // Message is a self reception request (loopback)
-        .dlc_non_comp = 0,      // DLC is less than 8
-        // Message ID and payload
-        .identifier = MSG_ID,
-        .data_length_code = 1,
-        .data = {0},
-    };
-
-    for (int iter = 0; iter < NO_OF_ITERS; iter++) {
-        xSemaphoreTake(tx_sem, portMAX_DELAY);
-        for (int i = 0; i < NO_OF_MSGS; i++) {
-            //Transmit messages using self reception request
-            tx_msg.data[0] = i;
-            ESP_ERROR_CHECK(twai_transmit(&tx_msg, portMAX_DELAY));
-            vTaskDelay(pdMS_TO_TICKS(10));
-        }
-    }
-    vTaskDelete(NULL);
-}
-
 static void twai_receive_task(void *arg)
 {
-    twai_message_t rx_message;
+    xSemaphoreTake(rx_sem, portMAX_DELAY);
+    bool start_cmd = false;
+    bool stop_resp = false;
+    uint32_t iterations = 0;
 
-    for (int iter = 0; iter < NO_OF_ITERS; iter++) {
-        xSemaphoreTake(rx_sem, portMAX_DELAY);
-        for (int i = 0; i < NO_OF_MSGS; i++) {
-            //Receive message and print message data
-            ESP_ERROR_CHECK(twai_receive(&rx_message, portMAX_DELAY));
-            ESP_LOGI(EXAMPLE_TAG, "Msg received\tID 0x%lx\tData = %d", rx_message.identifier, rx_message.data[0]);
+    while (iterations < NO_OF_ITERS) {
+        twai_message_t rx_msg;
+        twai_receive(&rx_msg, portMAX_DELAY);
+        if (rx_msg.identifier == ID_MASTER_PING) {
+            ESP_LOGI(EXAMPLE_TAG, "Received master ping");
+        } else if (rx_msg.identifier == ID_SLAVE_PING_RESP) {
+            ESP_LOGI(EXAMPLE_TAG, "Received slave ping response");
+        } else if (rx_msg.identifier == ID_MASTER_START_CMD) {
+            ESP_LOGI(EXAMPLE_TAG, "Received master start command");
+            start_cmd = true;
+        } else if (rx_msg.identifier == ID_SLAVE_DATA) {
+            uint32_t data = 0;
+            for (int i = 0; i < rx_msg.data_length_code; i++) {
+                data |= (rx_msg.data[i] << (i * 8));
+            }
+            ESP_LOGI(EXAMPLE_TAG, "Received data value %"PRIu32, data);
+        } else if (rx_msg.identifier == ID_MASTER_STOP_CMD) {
+            ESP_LOGI(EXAMPLE_TAG, "Received master stop command");
+        } else if (rx_msg.identifier == ID_SLAVE_STOP_RESP) {
+            ESP_LOGI(EXAMPLE_TAG, "Received slave stop response");
+            stop_resp = true;
         }
-        //Indicate to control task all messages received for this iteration
-        xSemaphoreGive(ctrl_sem);
+        if (start_cmd && stop_resp) {
+            //Each iteration is complete after a start command and stop response is received
+            iterations++;
+            start_cmd = 0;
+            stop_resp = 0;
+        }
     }
-    vTaskDelete(NULL);
-}
 
-static void twai_control_task(void *arg)
-{
-    xSemaphoreTake(ctrl_sem, portMAX_DELAY);
-    for (int iter = 0; iter < NO_OF_ITERS; iter++) {
-        //Start TWAI Driver for this iteration
-        ESP_ERROR_CHECK(twai_start());
-        ESP_LOGI(EXAMPLE_TAG, "Driver started");
-
-        //Trigger TX and RX tasks to start transmitting/receiving
-        xSemaphoreGive(rx_sem);
-        xSemaphoreGive(tx_sem);
-        xSemaphoreTake(ctrl_sem, portMAX_DELAY);    //Wait for TX and RX tasks to finish iteration
-
-        ESP_ERROR_CHECK(twai_stop());               //Stop the TWAI Driver
-        ESP_LOGI(EXAMPLE_TAG, "Driver stopped");
-        vTaskDelay(pdMS_TO_TICKS(100));             //Delay then start next iteration
-    }
-    xSemaphoreGive(done_sem);
+    xSemaphoreGive(rx_sem);
     vTaskDelete(NULL);
 }
 
 void app_main(void)
 {
-    //Create tasks and synchronization primitives
-    tx_sem = xSemaphoreCreateBinary();
     rx_sem = xSemaphoreCreateBinary();
-    ctrl_sem = xSemaphoreCreateBinary();
-    done_sem = xSemaphoreCreateBinary();
-
-    xTaskCreatePinnedToCore(twai_control_task, "TWAI_ctrl", 4096, NULL, CTRL_TSK_PRIO, NULL, tskNO_AFFINITY);
     xTaskCreatePinnedToCore(twai_receive_task, "TWAI_rx", 4096, NULL, RX_TASK_PRIO, NULL, tskNO_AFFINITY);
-    xTaskCreatePinnedToCore(twai_transmit_task, "TWAI_tx", 4096, NULL, TX_TASK_PRIO, NULL, tskNO_AFFINITY);
 
-    //Install TWAI driver
+    //Install and start TWAI driver
     ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
     ESP_LOGI(EXAMPLE_TAG, "Driver installed");
+    ESP_ERROR_CHECK(twai_start());
+    ESP_LOGI(EXAMPLE_TAG, "Driver started");
 
-    //Start control task
-    xSemaphoreGive(ctrl_sem);
-    //Wait for all iterations and tasks to complete running
-    xSemaphoreTake(done_sem, portMAX_DELAY);
+    xSemaphoreGive(rx_sem);                     //Start RX task
+    vTaskDelay(pdMS_TO_TICKS(100));
+    xSemaphoreTake(rx_sem, portMAX_DELAY);      //Wait for RX task to complete
 
-    //Uninstall TWAI driver
+    //Stop and uninstall TWAI driver
+    ESP_ERROR_CHECK(twai_stop());
+    ESP_LOGI(EXAMPLE_TAG, "Driver stopped");
     ESP_ERROR_CHECK(twai_driver_uninstall());
     ESP_LOGI(EXAMPLE_TAG, "Driver uninstalled");
 
     //Cleanup
-    vSemaphoreDelete(tx_sem);
     vSemaphoreDelete(rx_sem);
-    vSemaphoreDelete(ctrl_sem);
-    vQueueDelete(done_sem);
 }

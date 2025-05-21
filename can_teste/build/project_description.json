@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "can_test",
-    "project_version":    "4433b96-dirty",
+    "project_version":    "d08e4da-dirty",
     "project_path":       "/home/rafael_ubuntu/esp/projects/can_teste",
     "idf_path":           "/home/rafael_ubuntu/esp/esp-idf",
     "build_dir":          "/home/rafael_ubuntu/esp/projects/can_teste/build",

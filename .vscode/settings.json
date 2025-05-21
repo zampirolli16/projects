@@ -1,0 +1,4 @@
+{
+    "idf.pythonInstallPath": "/usr/bin/python3",
+    "cmake.sourceDirectory": "/home/rafael_ubuntu/esp/projects/can_recieve"
+}
