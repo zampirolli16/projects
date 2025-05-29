@@ -1,0 +1,2 @@
+source /home/rafael_ubuntu/esp/projects/can_send_test/build/bootloader/gdbinit/symbols
+source /home/rafael_ubuntu/esp/projects/can_send_test/build/bootloader/gdbinit/connect
