@@ -1,0 +1,2 @@
+source /home/rafael/esp/projects/maghall_teste/build/gdbinit/symbols
+source /home/rafael/esp/projects/maghall_teste/build/gdbinit/connect

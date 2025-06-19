@@ -1,0 +1,2 @@
+source /home/rafael/esp/projects/maghall_teste/build/bootloader/gdbinit/symbols
+source /home/rafael/esp/projects/maghall_teste/build/bootloader/gdbinit/connect

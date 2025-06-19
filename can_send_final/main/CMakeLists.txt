@@ -1,2 +1,2 @@
-idf_component_register(SRCS "can_send_final.c"
+idf_component_register(SRCS "as5600.c" "can_send_final.c"
                     INCLUDE_DIRS ".")
