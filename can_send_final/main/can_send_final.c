@@ -39,7 +39,8 @@ void app_main() {
     int flag = 0;
     int T_media = 20;
     int count_media;
-    int vet_media[T_media];
+    float vet_media[T_media];
+    float rpm_media = 0;
 
     while (1){
         //lógica anemometro
@@ -58,6 +59,11 @@ void app_main() {
         float rpm = (delta_angulo / 360.0f) * (60.0f / delta_tempo);
         if (fabs(delta_angulo) < 1.0f) {
         rpm = 0.0f;
+        }
+        while (count_media < 20){
+            vet_media[count_media] = rpm;
+            rpm_media = 
+
         }
 
         //printf("RPM: %.2f\n", rpm);
