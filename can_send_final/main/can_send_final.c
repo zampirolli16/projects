@@ -39,7 +39,7 @@ void app_main() {
     int flag = 0;
     int T_media = 20;
     int count_media;
-    float vet_media[T_media] = {0};
+    float vet_media[T_media];
     float rpm_media = 0;
 
     while (1){
@@ -60,12 +60,15 @@ void app_main() {
         if (fabs(delta_angulo) < 1.0f) {
         rpm = 0.0f;
         }
+
+        //Filtro média móvel
         if (count_media < T_media){
             vet_media[count_media] = rpm;
             int i = 0;
             rpm_media = 0;
             while (rpm_media < T_media){
                 rpm_media = (rpm_media + vet_media[i])/T_media;
+                i++;
             }
         }
 
