@@ -37,8 +37,8 @@ void app_main() {
     float angulo_anterior = as5600_get_angle_degrees();
     int64_t tempo_anterior = esp_timer_get_time();
     int flag = 0;
-    int T_media = 20;
-    int count_media;
+    int T_media = 75;
+    int count_media = 0;
     float vet_media[T_media];
     float rpm_media = 0;
 
@@ -66,21 +66,25 @@ void app_main() {
             vet_media[count_media] = rpm;
             int i = 0;
             rpm_media = 0;
-            while (rpm_media < T_media){
-                rpm_media = (rpm_media + vet_media[i])/T_media;
+            while (i < T_media){
+                rpm_media = rpm_media + vet_media[i];
                 i++;
             }
+            rpm_media = rpm_media/T_media;
+            count_media++;
         }
-
+        else{
+            count_media = 0;
+        }
         //printf("RPM: %.2f\n", rpm);
         //printf("angulo anterior: %.2f\n",angulo_anterior);
         //printf("angulo atual: %.2f\n",angulo_atual);
 
         
         
-        if (flag == 1){
-            printf("negativo\n");
-        }
+        //if (flag == 1){
+       //     printf("negativo\n");
+       // }
 
         angulo_anterior = angulo_atual;
         tempo_anterior = tempo_atual;
@@ -88,13 +92,14 @@ void app_main() {
         tempo++;
 
         // Prepare a message to send
-        if (tempo == 100){
-            int rpm_send = (int)round(rpm);
+        if (tempo == 300){
+            int rpm_send = (int)round(rpm_media);
             twai_message_t anemometro;          
             anemometro.identifier = 0x001;     
             anemometro.data_length_code = 1;       
             anemometro.data[0] = rpm_send;  
             
+            printf ("RPM (média móvel): %.2f\n", rpm_media);
             printf ("rpm mensagem: %d\n", anemometro.data[0]);
 
             // Transmit the message
