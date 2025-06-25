@@ -84,3 +84,4 @@
 /home/rafael/esp/projects/can_send_final/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
 /home/rafael/esp/projects/can_send_final/build/esp-idf/main/libmain.a
 /home/rafael/esp/projects/can_send_final/build/esp-idf/as5600/libas5600.a
+/home/rafael/esp/projects/can_send_final/build/esp-idf/dht11/libdht11.a

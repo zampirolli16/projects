@@ -6,6 +6,9 @@
 #include "as5600.h"
 #include "esp_timer.h"
 #include "math.h"
+#include "driver/gpio.h"
+#include "sdkconfig.h"
+#include "dht11.h"
 
 #define TAG "CAN_DRIVER"  // Define a tag for logging messages
 
@@ -34,6 +37,7 @@ void app_main() {
 
     // Setup Anemometro
     as5600_init();
+    DHT11_init(GPIO_NUM_26);
     float angulo_anterior = as5600_get_angle_degrees();
     int64_t tempo_anterior = esp_timer_get_time();
     int flag = 0;
@@ -88,26 +92,61 @@ void app_main() {
 
         angulo_anterior = angulo_atual;
         tempo_anterior = tempo_atual;
+
+        //dht11 (temeratura e humidade)
+
         vTaskDelay (pdMS_TO_TICKS(1));
         tempo++;
 
         // Prepare a message to send
-        if (tempo == 300){
+        if (tempo == 600){
             int rpm_send = (int)round(rpm_media);
             twai_message_t anemometro;          
             anemometro.identifier = 0x001;     
             anemometro.data_length_code = 1;       
             anemometro.data[0] = rpm_send;  
+
+            twai_message_t temperatura;
+            temperatura.identifier = 0x002;
+            temperatura.data_length_code = 2;
+            temperatura.data[0] = DHT11_read().temperature;
+
+            twai_message_t humidade;
+            humidade.identifier = 0x003;
+            humidade.data_length_code = 1;
+            humidade.data[0] = DHT11_read().humidity;
             
+            printf("Anemometro \n");
+            printf ("RPM Raw: %.2f \n", rpm);
             printf ("RPM (média móvel): %.2f\n", rpm_media);
             printf ("rpm mensagem: %d\n", anemometro.data[0]);
+            printf("angulo anterior: %.2f\n",angulo_anterior);
+            printf("angulo atual: %.2f\n \n",angulo_atual);
+
+            printf ("Temperatura: %d \n \n", DHT11_read().temperature);
+
+            printf ("humidade: %d \n \n", DHT11_read().humidity);
+
 
             // Transmit the message
             if (twai_transmit(&anemometro, pdMS_TO_TICKS(1)) == ESP_OK) {
-                ESP_LOGI(TAG, "Message transmitted");
+                ESP_LOGI(TAG, "Anemometro transmitted");
             } else {
-                ESP_LOGE(TAG, "Failed to transmit message");
+                ESP_LOGE(TAG, "Failed to transmit Anemometro");
             }
+
+            if (twai_transmit(&temperatura, pdMS_TO_TICKS(1)) == ESP_OK) {
+                ESP_LOGI(TAG, "temperatura transmitted");
+            } else {
+                ESP_LOGE(TAG, "Failed to transmit temperatura");
+            }
+
+            if (twai_transmit(&humidade, pdMS_TO_TICKS(1)) == ESP_OK) {
+                ESP_LOGI(TAG, "humidade transmitted");
+            } else {
+                ESP_LOGE(TAG, "Failed to transmit humidade");
+            }
+
 
             tempo = 0;
         }

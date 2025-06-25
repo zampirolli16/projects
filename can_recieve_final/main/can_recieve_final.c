@@ -4,6 +4,9 @@
 #define TAG "CAN_DRIVER"  // Define a tag for logging messages
 
 void app_main() {
+    int rpm_recebido = 0;
+    int temperatura_recebida = 0;
+    int umidade_recebida = 0;
     // Configure the CAN driver parameters (RX = 4; TX = 5)
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_4, GPIO_NUM_5, TWAI_MODE_NORMAL);
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
@@ -26,18 +29,39 @@ void app_main() {
     }
 
     while (1){
-    
+
         // Receive a message
         twai_message_t rx_message;  // Declare a message structure for receiving
         if (twai_receive(&rx_message, pdMS_TO_TICKS(2000)) == ESP_OK) {
             printf("Message received -> ");
-            if (rx_message.identifier == 1){
+            if (rx_message.identifier == 0x001){
                     printf("Anemometro: \n");
                     ESP_LOGI(TAG, "DLC: %d, Data:", rx_message.data_length_code);
                 for (int i = 0; i < rx_message.data_length_code; i++) {
                     ESP_LOGI(TAG, "Data[%d]: %d", i, rx_message.data[i]);
                 }
-            }
+                rpm_recebido =rx_message.data[0];
+                ESP_LOGI(TAG, "RPM recebido: %d", rpm_recebido);
+
+            } else if (rx_message.identifier == 0x002){
+                    printf("Sensor de temperatura: \n");
+                    ESP_LOGI(TAG, "DLC: %d, Data:", rx_message.data_length_code);
+                for (int i = 0; i < rx_message.data_length_code; i++) {
+                    ESP_LOGI(TAG, "Data[%d]: %d", i, rx_message.data[i]);
+                }
+                temperatura_recebida =rx_message.data[0];
+                ESP_LOGI(TAG, "Temperatura recebida: %d", temperatura_recebida);
+
+            } else if (rx_message.identifier == 0x003){
+                    printf("Sensor de umidade: \n");
+                    ESP_LOGI(TAG, "DLC: %d, Data:", rx_message.data_length_code);
+                for (int i = 0; i < rx_message.data_length_code; i++) {
+                    ESP_LOGI(TAG, "Data[%d]: %d", i, rx_message.data[i]);
+                }
+                umidade_recebida =rx_message.data[0];
+                ESP_LOGI(TAG, "Umidade recebida: %d%%", umidade_recebida);
+            } 
+
         } else {
             ESP_LOGE(TAG, "Failed to receive message");
         }
@@ -45,8 +69,7 @@ void app_main() {
     }
 
     // Stop and uninstall the CAN driver
-    twai_stop();                         
-    twai_driver_uninstall();             
+    twai_stop();
+    twai_driver_uninstall();
     ESP_LOGI(TAG, "TWAI driver uninstalled");
 }
-
