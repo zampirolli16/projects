@@ -1,0 +1,20 @@
+Command: cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=/home/rafael/.espressif/python_env/idf5.5_py3.12_env/bin/python -DESP_PLATFORM=1 -DCCACHE_ENABLE=0 /home/rafael/esp/projects/mqtt_teste
+CMake Error at /home/rafael/esp/esp-idf/tools/cmake/component.cmake:491 (add_library):
+  Cannot find source file:
+
+    /home/rafael/esp/projects/mqtt_teste/components/ssd1306/ssd1306.c
+
+  Tried extensions .c .C .c++ .cc .cpp .cxx .cu .mpp .m .M .mm .ixx .cppm
+  .ccm .cxxm .c++m .h .hh .h++ .hm .hpp .hxx .in .txx .f .F .for .f77 .f90
+  .f95 .f03 .hip .ispc
+Call Stack (most recent call first):
+  components/ssd1306/CMakeLists.txt:1 (idf_component_register)
+
+
+CMake Error at /home/rafael/esp/esp-idf/tools/cmake/component.cmake:491 (add_library):
+  No SOURCES given to target: __idf_ssd1306
+Call Stack (most recent call first):
+  components/ssd1306/CMakeLists.txt:1 (idf_component_register)
+
+
+CMake Generate step failed.  Build files cannot be regenerated correctly.

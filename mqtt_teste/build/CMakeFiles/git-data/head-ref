@@ -1,0 +1,10 @@
+0000000000000000000000000000000000000000 2bbc3f1de669c33cccf25c9b1d36e887b74cdd0f rafael <rafael@rafael-Lenovo-G40-70.(none)> 1747858698 -0300	clone: from https://github.com/zampirolli16/projects.git
+2bbc3f1de669c33cccf25c9b1d36e887b74cdd0f d4dab8d6895d3a55d4254c106e5a870e8664b76a zampirolli16 <zampirolli@usp.br> 1747860034 -0300	commit: adicionando exemplo mqtt
+d4dab8d6895d3a55d4254c106e5a870e8664b76a 567f80d6d79fbf96de568c9dc041d3f8a2626feb zampirolli16 <zampirolli@usp.br> 1749675087 -0300	pull: Fast-forward
+567f80d6d79fbf96de568c9dc041d3f8a2626feb d0d2ab1b6af41f8571be4d56fd12f9ea3909e423 zampirolli16 <zampirolli@usp.br> 1749696087 -0300	commit: adicionando codigos can finais
+d0d2ab1b6af41f8571be4d56fd12f9ea3909e423 48b1f783a8f3d443e31bf163405f666d97d9ee16 zampirolli16 <zampirolli@usp.br> 1750360736 -0300	commit: add can com anemometro
+48b1f783a8f3d443e31bf163405f666d97d9ee16 d8864d8ed5b43878afdbbcab38b406f074c359fb zampirolli16 <zampirolli@usp.br> 1750447186 -0300	commit: media movel beta
+d8864d8ed5b43878afdbbcab38b406f074c359fb 63a3a6ab12eb54711161b5e6e04310d794e6e26e zampirolli16 <zampirolli@usp.br> 1750452146 -0300	pull: Fast-forward
+63a3a6ab12eb54711161b5e6e04310d794e6e26e 4d5d0a92085b68ee48ce89afa9bcca6d1b427a90 zampirolli16 <zampirolli@usp.br> 1750500773 -0300	commit: fim do dia
+4d5d0a92085b68ee48ce89afa9bcca6d1b427a90 063f0599b78dd8c791f10fe280f3a5d637059181 zampirolli16 <zampirolli@usp.br> 1750697099 -0300	commit: media movel ok
+063f0599b78dd8c791f10fe280f3a5d637059181 87e46be8f0d3b8bc03c03695348edc47dba97a97 zampirolli16 <zampirolli@usp.br> 1750884033 -0300	commit: adicionado display e dht11
