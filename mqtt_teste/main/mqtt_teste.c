@@ -29,8 +29,11 @@
 
 #include "mqtt_client.h" // funcoes para a conexao MQTT
 
-#define  SSID "Sofy_A53"
-#define  SENHA "kgil33560"
+#include "driver/twai.h"  // Include the TWAI (CAN) driver library
+#include "esp_log.h"      // Include ESP logging library
+
+#define  SSID "lulusenta"
+#define  SENHA "poscrias"
 #define BLINK_GPIO 2
 
 #define SDA_PIN GPIO_NUM_21
@@ -63,6 +66,69 @@ int veloc=0;
 
 
 int retry_num=0;
+void can_init(void)
+{
+    // Configure the CAN driver parameters (RX = 4; TX = 5)
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_4, GPIO_NUM_5, TWAI_MODE_NORMAL);
+    twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
+    twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+
+    // Initialize the CAN driver
+    if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK) {
+        ESP_LOGI(TAG, "TWAI driver installed successfully");
+    } else {
+        ESP_LOGE(TAG, "Failed to install TWAI driver");
+        return; // Exit the function if driver installation fails
+    }
+
+    // Start the CAN driver
+    if (twai_start() == ESP_OK) {
+        ESP_LOGI(TAG, "TWAI driver started successfully");
+    } else {
+        ESP_LOGE(TAG, "Failed to start TWAI driver");
+        return; // Exit the function if driver start fails
+    }
+}
+
+static void can_read(void){
+    // Receive a message
+    twai_message_t rx_message;  // Declare a message structure for receiving
+    if (twai_receive(&rx_message, pdMS_TO_TICKS(2000)) == ESP_OK) {
+        printf("Message received -> ");
+        if (rx_message.identifier == 0x001){
+                printf("Anemometro: \n");
+                ESP_LOGI(TAG, "DLC: %d, Data:", rx_message.data_length_code);
+            for (int i = 0; i < rx_message.data_length_code; i++) {
+                ESP_LOGI(TAG, "Data[%d]: %d", i, rx_message.data[i]);
+            }
+            veloc =rx_message.data[0];
+            ESP_LOGI(TAG, "RPM recebido: %d", veloc);
+
+        } else if (rx_message.identifier == 0x002){
+                printf("Sensor de temperatura: \n");
+                ESP_LOGI(TAG, "DLC: %d, Data:", rx_message.data_length_code);
+            for (int i = 0; i < rx_message.data_length_code; i++) {
+                ESP_LOGI(TAG, "Data[%d]: %d", i, rx_message.data[i]);
+            }
+            Temperatura =rx_message.data[0];
+            ESP_LOGI(TAG, "Temperatura recebida: %d", Temperatura);
+
+        } else if (rx_message.identifier == 0x003){
+                printf("Sensor de umidade: \n");
+                ESP_LOGI(TAG, "DLC: %d, Data:", rx_message.data_length_code);
+            for (int i = 0; i < rx_message.data_length_code; i++) {
+                ESP_LOGI(TAG, "Data[%d]: %d", i, rx_message.data[i]);
+            }
+            Umida =rx_message.data[0];
+            ESP_LOGI(TAG, "Umidade recebida: %d%%", Umida);
+        } 
+
+    } else {
+        ESP_LOGE(TAG, "Failed to receive message");
+    }
+    printf("\n");
+}
+
 void i2c_master_init()
 {
     i2c_config_t i2c_conf = {
@@ -368,13 +434,16 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     case MQTT_EVENT_DATA: //Qiuando o cliente recebe a mensagem publicada
     // o event (struct com os dados do evento) guarda o id, nome do topico, dado e tamanho do dado
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
+        can_read();
+
+        
         printf("\nTOPIC=%.*s\r\n", event->topic_len, event->topic);//nome do topico
         printf("DATA=%.*s\r\n", event->data_len, event->data); //nomr do dado (mensagem)
-        esp_mqtt_client_publish(client, "temperatura", "primeiro", 0, 1, 0);
+        esp_mqtt_client_publish(client, "temperatura", Temperatura, 0, 1, 0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        esp_mqtt_client_publish(client, "sensor-de-vento", "primeiro", 0, 1, 0);
+        esp_mqtt_client_publish(client, "sensor-de-vento", veloc, 0, 1, 0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        esp_mqtt_client_publish(client, "umidade", "primeiro", 0, 1, 0);
+        esp_mqtt_client_publish(client, "umidade", Umida, 0, 1, 0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         if (strncmp(event->data, "liga", event->data_len) == 0){
             s_led_state = true;
@@ -457,12 +526,13 @@ static void configure_led(void)
 
 void app_main(void)
 {
+    can_init(); //inicia o driver da can
     i2c_master_init();
     ssd1306_init();
     nvs_flash_init(); //guarda as config do wifi, como 
     wifi_connection(); //config do 
     configure_led();//inicia a config do led
-
+   
     vTaskDelay(2000 / portTICK_PERIOD_MS); // esperea um pouco ate configurar o wifi
     printf("WIFI foi iniciado ...........\n");
     //xTaskCreate(&task_ssd1306_display_clear, "ssd1306_clear", 2048, NULL, 6, NULL);
@@ -471,6 +541,8 @@ void app_main(void)
     //xTaskCreate(&task_ssd1306_display_text, "ssd1306_text", 2048, (void *)"Hello world!\n Multiline OK!\n Outra linha", 6, NULL);
     
     mqtt_app_start();
+
+    
     
 }
 
