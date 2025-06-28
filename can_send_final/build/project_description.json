@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "can_send_final",
-    "project_version":    "063f059-dirty",
+    "project_version":    "efd8166-dirty",
     "project_path":       "/home/rafael/esp/projects/can_send_final",
     "idf_path":           "/home/rafael/esp/esp-idf",
     "build_dir":          "/home/rafael/esp/projects/can_send_final/build",

@@ -59,6 +59,7 @@ static const char *TAG1 = "wifi";
 static const char *TAG = "MQTT";
 static const char *TAG2 = "SSD1306";
 static const char *TAG3 = "LED";
+static const char *TAG4 = "CAN";
 
 int Temperatura=0;
 int Umida=0;
@@ -75,17 +76,17 @@ void can_init(void)
 
     // Initialize the CAN driver
     if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK) {
-        ESP_LOGI(TAG, "TWAI driver installed successfully");
+        ESP_LOGI(TAG4, "TWAI driver installed successfully");
     } else {
-        ESP_LOGE(TAG, "Failed to install TWAI driver");
+        ESP_LOGE(TAG4, "Failed to install TWAI driver");
         return; // Exit the function if driver installation fails
     }
 
     // Start the CAN driver
     if (twai_start() == ESP_OK) {
-        ESP_LOGI(TAG, "TWAI driver started successfully");
+        ESP_LOGI(TAG4, "TWAI driver started successfully");
     } else {
-        ESP_LOGE(TAG, "Failed to start TWAI driver");
+        ESP_LOGE(TAG4, "Failed to start TWAI driver");
         return; // Exit the function if driver start fails
     }
 }
@@ -97,34 +98,34 @@ static void can_read(void){
         printf("Message received -> ");
         if (rx_message.identifier == 0x001){
                 printf("Anemometro: \n");
-                ESP_LOGI(TAG, "DLC: %d, Data:", rx_message.data_length_code);
+                ESP_LOGI(TAG4, "DLC: %d, Data:", rx_message.data_length_code);
             for (int i = 0; i < rx_message.data_length_code; i++) {
-                ESP_LOGI(TAG, "Data[%d]: %d", i, rx_message.data[i]);
+                ESP_LOGI(TAG4, "Data[%d]: %d", i, rx_message.data[i]);
             }
             veloc =rx_message.data[0];
-            ESP_LOGI(TAG, "RPM recebido: %d", veloc);
+            ESP_LOGI(TAG4, "RPM recebido: %d", veloc);
 
         } else if (rx_message.identifier == 0x002){
                 printf("Sensor de temperatura: \n");
-                ESP_LOGI(TAG, "DLC: %d, Data:", rx_message.data_length_code);
+                ESP_LOGI(TAG4, "DLC: %d, Data:", rx_message.data_length_code);
             for (int i = 0; i < rx_message.data_length_code; i++) {
-                ESP_LOGI(TAG, "Data[%d]: %d", i, rx_message.data[i]);
+                ESP_LOGI(TAG4, "Data[%d]: %d", i, rx_message.data[i]);
             }
             Temperatura =rx_message.data[0];
-            ESP_LOGI(TAG, "Temperatura recebida: %d", Temperatura);
+            ESP_LOGI(TAG4, "Temperatura recebida: %d", Temperatura);
 
         } else if (rx_message.identifier == 0x003){
                 printf("Sensor de umidade: \n");
-                ESP_LOGI(TAG, "DLC: %d, Data:", rx_message.data_length_code);
+                ESP_LOGI(TAG4, "DLC: %d, Data:", rx_message.data_length_code);
             for (int i = 0; i < rx_message.data_length_code; i++) {
-                ESP_LOGI(TAG, "Data[%d]: %d", i, rx_message.data[i]);
+                ESP_LOGI(TAG4, "Data[%d]: %d", i, rx_message.data[i]);
             }
             Umida =rx_message.data[0];
-            ESP_LOGI(TAG, "Umidade recebida: %d%%", Umida);
+            ESP_LOGI(TAG4, "Umidade recebida: %d%%", Umida);
         } 
 
     } else {
-        ESP_LOGE(TAG, "Failed to receive message");
+        ESP_LOGE(TAG4, "Failed to receive message");
     }
     printf("\n");
 }
@@ -413,10 +414,10 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     case MQTT_EVENT_CONNECTED: // cliente conectado ao broker
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED"); //exibe o log
         esp_mqtt_client_subscribe(client, "teste", 0); //Inscreve-se no tópico MQTT
-        esp_mqtt_client_subscribe(client, "temperatura", 0);
-        esp_mqtt_client_subscribe(client, "sensor-de-vento", 0);
-        esp_mqtt_client_subscribe(client, "umidade", 0);
-        esp_mqtt_client_subscribe(client, "mapa", 0);
+        esp_mqtt_client_subscribe(client, "sensores/temperatura", 0);
+        esp_mqtt_client_subscribe(client, "sensores/sensor-de-vento", 0);
+        esp_mqtt_client_subscribe(client, "sensores/umidade", 0);
+        esp_mqtt_client_subscribe(client, "sensores/mapa", 0);
         esp_mqtt_client_publish(client, "teste", "Oi da ESP32 .........", 0, 1, 0);
         break;
     case MQTT_EVENT_DISCONNECTED:
@@ -436,14 +437,21 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         can_read();
 
+        char Temperatura_str[20];
+        char veloc_str[20];
+        char Umida_str[20];
+
+        sprintf(Temperatura_str, "%d", Temperatura);
+        sprintf(veloc_str, "%d", veloc);
+        sprintf(Umida_str, "%d", Umida);
         
         printf("\nTOPIC=%.*s\r\n", event->topic_len, event->topic);//nome do topico
         printf("DATA=%.*s\r\n", event->data_len, event->data); //nomr do dado (mensagem)
-        esp_mqtt_client_publish(client, "temperatura", Temperatura, 0, 1, 0);
+        esp_mqtt_client_publish(client, "sensores/temperatura", Temperatura_str, 0, 1, 0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        esp_mqtt_client_publish(client, "sensor-de-vento", veloc, 0, 1, 0);
+        esp_mqtt_client_publish(client, "sensores/sensor-de-vento", veloc_str, 0, 1, 0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        esp_mqtt_client_publish(client, "umidade", Umida, 0, 1, 0);
+        esp_mqtt_client_publish(client, "sensores/umidade", Umida_str, 0, 1, 0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         if (strncmp(event->data, "liga", event->data_len) == 0){
             s_led_state = true;

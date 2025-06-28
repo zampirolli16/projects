@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "mqtt_teste",
-    "project_version":    "8335200-dirty",
+    "project_version":    "efd8166-dirty",
     "project_path":       "/home/rafael/esp/projects/mqtt_teste",
     "idf_path":           "/home/rafael/esp/esp-idf",
     "build_dir":          "/home/rafael/esp/projects/mqtt_teste/build",
