@@ -1,22 +1,22 @@
-#include <stdio.h> // para funcões de print 
+#include <stdio.h> // para funcões de print
 #include <string.h> //para lidar com sitrings
 #include "freertos/FreeRTOS.h" //para os delays
-#include "freertos/task.h" 
+#include "freertos/task.h"
 #include "esp_wifi.h" //configuracao do wifi
 #include "esp_system.h" // gerencia o sistema da esp32
 #include "esp_log.h" //logs no terminal
 #include "esp_event.h" // manipular eventos
 #include "nvs_flash.h" //memoria nao volatil
-#include "esp_netif.h" 
-#include "esp_err.h" // examina os erros 
+#include "esp_netif.h"
+#include "esp_err.h" // examina os erros
 //#include "protocol_examples_common.h" //facilita a manipulacao de protoclos(wifi,mqtt etc)
 #include "esp_wifi.h"
 #include "esp_netif.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
 // biblioteca para manipulacao de pilha TCP/IP
-#include "lwip/err.h" 
-#include "lwip/sys.h" 
+#include "lwip/err.h"
+#include "lwip/sys.h"
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
@@ -69,7 +69,7 @@ int veloc=0;
 int retry_num=0;
 void can_init(void)
 {
-    // Configure the CAN driver parameters (RX = 4; TX = 5)
+    // Configure the CAN driver parameters (TX = 4; RX = 5)
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_4, GPIO_NUM_5, TWAI_MODE_NORMAL);
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
@@ -122,7 +122,7 @@ static void can_read(void){
             }
             Umida =rx_message.data[0];
             ESP_LOGI(TAG4, "Umidade recebida: %d%%", Umida);
-        } 
+        }
 
     } else {
         ESP_LOGE(TAG4, "Failed to receive message");
@@ -154,8 +154,8 @@ void ssd1306_init() {
     i2c_master_write_byte(cmd, OLED_CMD_SET_CHARGE_PUMP, true);
     i2c_master_write_byte(cmd, 0x14, true);
 
-    i2c_master_write_byte(cmd, OLED_CMD_SET_SEGMENT_REMAP, true); // espelho horizontal
-    i2c_master_write_byte(cmd, OLED_CMD_SET_COM_SCAN_MODE, true); // espelho vertical
+    i2c_master_write_byte(cmd, OLED_CMD_SET_SEGMENT_REMAP, true);
+    i2c_master_write_byte(cmd, OLED_CMD_SET_COM_SCAN_MODE, true);
 
     i2c_master_write_byte(cmd, OLED_CMD_DISPLAY_ON, true);
     i2c_master_stop(cmd);
@@ -169,7 +169,7 @@ void ssd1306_init() {
 
     i2c_cmd_link_delete(cmd);
 }
-void task_ssd1306_display_clear(void) {
+void task_ssd1306_display_clear(void *ignore) {
     i2c_cmd_handle_t cmd;
     uint8_t zero[128] = {0};
 
@@ -189,22 +189,33 @@ void task_ssd1306_display_clear(void) {
     }
     vTaskDelete(NULL);
 }
-void task_ssd1306_display_text(void *arg_text) {
-    const char *text = (const char *)arg_text;
+void ssd1306_display_text(const char *text) {
     uint8_t text_len = strlen(text);
     i2c_cmd_handle_t cmd;
     uint8_t cur_page = 0;
 
-    // Inicializa posição do cursor
+    // Clear screen
+    uint8_t zero[128] = {0};
+    for (uint8_t i = 0; i < 8; i++) {
+        cmd = i2c_cmd_link_create();
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd, (OLED_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, true);
+        i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
+        i2c_master_write_byte(cmd, 0xB0 | i, true);
+        i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_DATA_STREAM, true);
+        i2c_master_write(cmd, zero, sizeof(zero), true);
+        i2c_master_stop(cmd);
+        i2c_master_cmd_begin(I2C_NUM_0, cmd, 10 / portTICK_PERIOD_MS);
+        i2c_cmd_link_delete(cmd);
+    }
+
     cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (OLED_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, true);
-
     i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_STREAM, true);
-    i2c_master_write_byte(cmd, 0x00, true); // reset coluna baixa
-    i2c_master_write_byte(cmd, 0x10, true); // reset coluna alta
-    i2c_master_write_byte(cmd, 0xB0 | cur_page, true); // reset página
-
+    i2c_master_write_byte(cmd, 0x00, true);
+    i2c_master_write_byte(cmd, 0x10, true);
+    i2c_master_write_byte(cmd, 0xB0 | cur_page, true);
     i2c_master_stop(cmd);
     i2c_master_cmd_begin(I2C_NUM_0, cmd, 10 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
@@ -215,12 +226,10 @@ void task_ssd1306_display_text(void *arg_text) {
             cmd = i2c_cmd_link_create();
             i2c_master_start(cmd);
             i2c_master_write_byte(cmd, (OLED_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, true);
-
             i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_STREAM, true);
             i2c_master_write_byte(cmd, 0x00, true);
             i2c_master_write_byte(cmd, 0x10, true);
             i2c_master_write_byte(cmd, 0xB0 | cur_page, true);
-
             i2c_master_stop(cmd);
             i2c_master_cmd_begin(I2C_NUM_0, cmd, 10 / portTICK_PERIOD_MS);
             i2c_cmd_link_delete(cmd);
@@ -228,17 +237,20 @@ void task_ssd1306_display_text(void *arg_text) {
             cmd = i2c_cmd_link_create();
             i2c_master_start(cmd);
             i2c_master_write_byte(cmd, (OLED_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, true);
-
             i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_DATA_STREAM, true);
             i2c_master_write(cmd, font8x8_basic_tr[(uint8_t)text[i]], 8, true);
-
             i2c_master_stop(cmd);
             i2c_master_cmd_begin(I2C_NUM_0, cmd, 10 / portTICK_PERIOD_MS);
             i2c_cmd_link_delete(cmd);
         }
     }
+}
 
-    vTaskDelete(NULL);
+static void display_write (void){
+    char display_text[64];
+    snprintf(display_text, sizeof(display_text),"Temp: %d C\nUmid: %d %%\nVel: %d m/s", Temperatura, Umida, veloc);
+
+    ssd1306_display_text(display_text);
 }
 
 static void blink_led(void);
@@ -253,7 +265,7 @@ static void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_b
 
     case WIFI_EVENT_STA_CONNECTED:
         ESP_LOGI(TAG1, "Wi-Fi coectado\n"); // conectado ao ponto de acesso(AP)
-        break;   
+        break;
 
     case WIFI_EVENT_STA_DISCONNECTED:
         ESP_LOGI(TAG1, "Disconectado do Wi-Fi:Reconectando\n");
@@ -279,13 +291,13 @@ static void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_b
 // Funcao que sera chamado no app_main para configurar o wifi
 void wifi_connection(void){
     esp_netif_init();
-    esp_event_loop_create_default(); //cria um loop dos eventos para que sejam manuseados e enviados 
+    esp_event_loop_create_default(); //cria um loop dos eventos para que sejam manuseados e enviados
     esp_netif_create_default_wifi_sta(); //incializacao do wifi para o modo estaocao e trata os eventos
     wifi_init_config_t wifi_default = WIFI_INIT_CONFIG_DEFAULT(); // configuracao padrao do wifi
     esp_wifi_init(&wifi_default); // driver inicializado com os valores padrao
     esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, NULL); // registra o wifi_event para obter qualquer variacao/evento do wifi
     esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_event_handler, NULL); // configura eventos Ip
-   
+
    wifi_config_t wifi_param = {
         .sta = {
             .ssid = SSID,
@@ -302,7 +314,7 @@ void wifi_connection(void){
 /*static void mqtt_event_handler(esp_mqtt_event_handle_t event){
     //esp_mqtt_event_handle_t e uma struct que receb a struct "event", a qual contem as variaveis do evento MQTT
     //esp_mqtt_event_handle_t event = event_data; //obtem os dados do evento MQTT
-    esp_mqtt_client_handle_t client = event->client; //obtem o conteudo do identificador cliente dentro da struct 
+    esp_mqtt_client_handle_t client = event->client; //obtem o conteudo do identificador cliente dentro da struct
     switch (event->event_id)
     {
     case MQTT_EVENT_CONNECTED: // cliente conectado ao broker
@@ -322,9 +334,9 @@ void wifi_connection(void){
         break;
 
     case MQTT_EVENT_UNSUBSCRIBED: // quando cancela a inscricao
-        ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED"); 
+        ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED");
         break;
-    
+
     case MQTT_EVENT_PUBLISHED:
         ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED"); //quando o broker reconhece a publicacao no topico
         break;
@@ -332,7 +344,7 @@ void wifi_connection(void){
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR"); // Em caso de erro
         break;
-        
+
     case MQTT_EVENT_ERROR:
     ESP_LOGE(TAG, "Erro MQTT detectado!");
 
@@ -436,6 +448,7 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     // o event (struct com os dados do evento) guarda o id, nome do topico, dado e tamanho do dado
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         can_read();
+        display_write();
 
         char Temperatura_str[20];
         char veloc_str[20];
@@ -444,7 +457,7 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
         sprintf(Temperatura_str, "%d", Temperatura);
         sprintf(veloc_str, "%d", veloc);
         sprintf(Umida_str, "%d", Umida);
-        
+
         printf("\nTOPIC=%.*s\r\n", event->topic_len, event->topic);//nome do topico
         printf("DATA=%.*s\r\n", event->data_len, event->data); //nomr do dado (mensagem)
         esp_mqtt_client_publish(client, "sensores/temperatura", Temperatura_str, 0, 1, 0);
@@ -456,7 +469,7 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
         if (strncmp(event->data, "liga", event->data_len) == 0){
             s_led_state = true;
             printf ("Mensagem válida\r\n");
-            ESP_LOGI(TAG3, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");// exibe o log com o status 
+            ESP_LOGI(TAG3, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");// exibe o log com o status
             if (s_led_state==true){ //verifica o status do led
             //publica mensagens
                 esp_mqtt_client_publish(client, "teste", "Led ligado .........", 0, 1, 0);
@@ -471,7 +484,7 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
         if (strncmp(event->data, "desliga", event->data_len) == 0){
             s_led_state = false;
             printf ("Mensagem válida\r\n");
-            ESP_LOGI(TAG3, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");// exibe o log com o status 
+            ESP_LOGI(TAG3, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");// exibe o log com o status
             if (s_led_state==false){ //verifica o status do led
             //publica mensagens
                 esp_mqtt_client_publish(client, "teste", "Led desligado .........", 0, 1, 0);
@@ -484,9 +497,9 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
             //xTaskCreate(&task_ssd1306_display_text, "ssd1306_text", 2048, (void *)"Hello world!\n Multiline OK!\n Outra linha", 6, NULL);
             //vTaskDelay(1000/ portTICK_PERIOD_MS);
 
-    
+
         }
-        
+
         break;
     case MQTT_EVENT_ERROR: //em caso de erro
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -537,19 +550,19 @@ void app_main(void)
     can_init(); //inicia o driver da can
     i2c_master_init();
     ssd1306_init();
-    nvs_flash_init(); //guarda as config do wifi, como 
-    wifi_connection(); //config do 
+    nvs_flash_init(); //guarda as config do wifi, como
+    wifi_connection(); //config do
     configure_led();//inicia a config do led
-   
+
     vTaskDelay(2000 / portTICK_PERIOD_MS); // esperea um pouco ate configurar o wifi
     printf("WIFI foi iniciado ...........\n");
     //xTaskCreate(&task_ssd1306_display_clear, "ssd1306_clear", 2048, NULL, 6, NULL);
     //vTaskDelay(100 / portTICK_PERIOD_MS);
 
     //xTaskCreate(&task_ssd1306_display_text, "ssd1306_text", 2048, (void *)"Hello world!\n Multiline OK!\n Outra linha", 6, NULL);
-    
+
     mqtt_app_start();
 
-    
-    
+
+
 }

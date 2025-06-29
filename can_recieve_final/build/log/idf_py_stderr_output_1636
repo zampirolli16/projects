@@ -1,0 +1,3 @@
+Command: cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=/home/rmz16/.espressif/python_env/idf5.5_py3.10_env/bin/python -DESP_PLATFORM=1 -DCCACHE_ENABLE=0 /home/rmz16/esp/projects/can_recieve_final
+CMake Error: The current CMakeCache.txt directory /home/rmz16/esp/projects/can_recieve_final/build/CMakeCache.txt is different than the directory /home/rafael/esp/projects/can_recieve_final/build where CMakeCache.txt was created. This may result in binaries being created in the wrong place. If you are not sure, reedit the CMakeCache.txt
+CMake Error: The source "/home/rmz16/esp/projects/can_recieve_final/CMakeLists.txt" does not match the source "/home/rafael/esp/projects/can_recieve_final/CMakeLists.txt" used to generate cache.  Re-run cmake with a different source directory.

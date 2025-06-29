@@ -1,5 +1,5 @@
 {
-    "idf.pythonInstallPath": "/home/rafael_ubuntu/.espressif/python_env/idf5.5_py3.12_env/bin/python",
+    "idf.pythonInstallPath": "/usr/bin/python3",
     "idf.flashType": "UART",
     "idf.port": "/dev/ttyACM0"
 }

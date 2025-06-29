@@ -1,0 +1,11 @@
+CMake Error at /home/rmz16/esp/v5.4.1/esp-idf/components/mbedtls/mbedtls/CMakeLists.txt:166 (message):
+  Could not create symbolic link for:
+  /home/rmz16/esp/v5.4.1/esp-idf/components/mbedtls/mbedtls/library/error.c
+  --> ln: failed to create symbolic link
+  '/home/rmz16/esp/projects/can_send_test/build/esp-idf/mbedtls/mbedtls/library/error.c':
+  File exists
+
+Call Stack (most recent call first):
+  /home/rmz16/esp/v5.4.1/esp-idf/components/mbedtls/mbedtls/library/CMakeLists.txt:193 (link_to_source)
+
+
