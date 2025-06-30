@@ -64,6 +64,7 @@ static const char *TAG4 = "CAN";
 int Temperatura=0;
 int Umida=0;
 int veloc=0;
+int status = 0;
 
 
 int retry_num=0;
@@ -248,7 +249,13 @@ void ssd1306_display_text(const char *text) {
 
 static void display_write (void){
     char display_text[64];
-    snprintf(display_text, sizeof(display_text),"Temp: %d C\nUmid: %d %%\nVel: %d m/s", Temperatura, Umida, veloc);
+
+    if (status == 1){
+        snprintf(display_text, sizeof(display_text),"Temp: %d C\nUmid: %d %%\nVel: %d m/s\nStatus: Regando", Temperatura, Umida, veloc);
+    }
+    else{
+        snprintf(display_text, sizeof(display_text),"Temp: %d C\nUmid: %d %%\nVel: %d m/s\nStatus: Desligado", Temperatura, Umida, veloc);
+    }    
 
     ssd1306_display_text(display_text);
 }
@@ -461,11 +468,11 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
         printf("\nTOPIC=%.*s\r\n", event->topic_len, event->topic);//nome do topico
         printf("DATA=%.*s\r\n", event->data_len, event->data); //nomr do dado (mensagem)
         esp_mqtt_client_publish(client, "sensores/temperatura", Temperatura_str, 0, 1, 0);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
         esp_mqtt_client_publish(client, "sensores/sensor-de-vento", veloc_str, 0, 1, 0);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
         esp_mqtt_client_publish(client, "sensores/umidade", Umida_str, 0, 1, 0);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
         if (strncmp(event->data, "liga", event->data_len) == 0){
             s_led_state = true;
             printf ("Mensagem válida\r\n");
@@ -473,10 +480,11 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
             if (s_led_state==true){ //verifica o status do led
             //publica mensagens
                 esp_mqtt_client_publish(client, "teste", "Led ligado .........", 0, 1, 0);
+                status = 1;
             }
             blink_led();
         /* Trocando o estado do led *///a cada publicação troca o estado do led
-            vTaskDelay(1000/ portTICK_PERIOD_MS);
+            vTaskDelay(100/ portTICK_PERIOD_MS);
             //xTaskCreate(&task_ssd1306_display_text, "ssd1306_text", 2048, (void *)"Hello world!\n Multiline OK!\n Outra linha", 6, NULL);
             //task_ssd1306_display_clear();
         }
@@ -488,9 +496,10 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
             if (s_led_state==false){ //verifica o status do led
             //publica mensagens
                 esp_mqtt_client_publish(client, "teste", "Led desligado .........", 0, 1, 0);
+                status = 0;
             }
             blink_led();
-            vTaskDelay(1000/ portTICK_PERIOD_MS);
+            vTaskDelay(10/ portTICK_PERIOD_MS);
             //xTaskCreate(&task_ssd1306_display_clear, "ssd1306_clear", 2048, NULL, 6, NULL);
             //task_ssd1306_display_clear();
             //vTaskDelay(100/ portTICK_PERIOD_MS);

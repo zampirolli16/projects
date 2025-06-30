@@ -99,7 +99,7 @@ void app_main() {
         tempo++;
 
         // Prepare a message to send
-        if (tempo == 600){
+        if (tempo == 2500){
             int rpm_send = (int)round(rpm_media);
             twai_message_t anemometro;          
             anemometro.identifier = 0x001;     

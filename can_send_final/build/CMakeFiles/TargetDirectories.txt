@@ -838,17 +838,3 @@
 /home/rafael/esp/projects/can_send_final/build/esp-idf/main/CMakeFiles/install.dir
 /home/rafael/esp/projects/can_send_final/build/esp-idf/main/CMakeFiles/install/local.dir
 /home/rafael/esp/projects/can_send_final/build/esp-idf/main/CMakeFiles/install/strip.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/as5600/CMakeFiles/__idf_as5600.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/as5600/CMakeFiles/edit_cache.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/as5600/CMakeFiles/rebuild_cache.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/as5600/CMakeFiles/list_install_components.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/as5600/CMakeFiles/install.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/as5600/CMakeFiles/install/local.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/as5600/CMakeFiles/install/strip.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/dht11/CMakeFiles/__idf_dht11.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/dht11/CMakeFiles/edit_cache.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/dht11/CMakeFiles/rebuild_cache.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/dht11/CMakeFiles/list_install_components.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/dht11/CMakeFiles/install.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/dht11/CMakeFiles/install/local.dir
-/home/rafael/esp/projects/can_send_final/build/esp-idf/dht11/CMakeFiles/install/strip.dir

@@ -838,3 +838,10 @@
 /home/rafael/esp/projects/can_recieve_final/build/esp-idf/main/CMakeFiles/install.dir
 /home/rafael/esp/projects/can_recieve_final/build/esp-idf/main/CMakeFiles/install/local.dir
 /home/rafael/esp/projects/can_recieve_final/build/esp-idf/main/CMakeFiles/install/strip.dir
+/home/rafael/esp/projects/can_recieve_final/build/esp-idf/protocol_examples_common/CMakeFiles/__idf_protocol_examples_common.dir
+/home/rafael/esp/projects/can_recieve_final/build/esp-idf/protocol_examples_common/CMakeFiles/edit_cache.dir
+/home/rafael/esp/projects/can_recieve_final/build/esp-idf/protocol_examples_common/CMakeFiles/rebuild_cache.dir
+/home/rafael/esp/projects/can_recieve_final/build/esp-idf/protocol_examples_common/CMakeFiles/list_install_components.dir
+/home/rafael/esp/projects/can_recieve_final/build/esp-idf/protocol_examples_common/CMakeFiles/install.dir
+/home/rafael/esp/projects/can_recieve_final/build/esp-idf/protocol_examples_common/CMakeFiles/install/local.dir
+/home/rafael/esp/projects/can_recieve_final/build/esp-idf/protocol_examples_common/CMakeFiles/install/strip.dir

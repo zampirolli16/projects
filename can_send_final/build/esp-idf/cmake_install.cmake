@@ -557,13 +557,3 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("/home/rafael/esp/projects/can_send_final/build/esp-idf/main/cmake_install.cmake")
 endif()
 
-if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  # Include the install script for the subdirectory.
-  include("/home/rafael/esp/projects/can_send_final/build/esp-idf/as5600/cmake_install.cmake")
-endif()
-
-if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  # Include the install script for the subdirectory.
-  include("/home/rafael/esp/projects/can_send_final/build/esp-idf/dht11/cmake_install.cmake")
-endif()
-
